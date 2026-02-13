@@ -23,7 +23,7 @@ Provided are the following macros to aid in writing tests. Using these allows yo
 MINCTES_ASSERT([condition])
 ```
 ```C
-MINCTES_EQUALS([actual],[expected])
+MINCTES_EQUALS([actual],[expected],[string_format])
 ```
 
 ## Pipeline
