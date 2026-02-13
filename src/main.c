@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
   }
   Program selected_program = program_from_string(argv[PROGRAM_ARG]);
   if (selected_program == PROGRAM_NONE) {
+    error_panic(ERROR_UNKNOWN_PROGRAM);
   }
 
   switch (selected_program) {
