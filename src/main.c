@@ -1,7 +1,12 @@
+#include <stdio.h>
 #include <string.h>
 
 #include "discover.h"
 #include "error.h"
+
+#ifndef MINCTES_VERSION
+#define MINCTES_VERSION "x.x.x"
+#endif
 
 typedef enum Program {
   PROGRAM_NONE = -1,
@@ -26,6 +31,8 @@ Program program_from_string(const char *program_string) {
 
   return PROGRAM_NONE;
 }
+
+void run_version(void) { fprintf(stdout, "%s\n", MINCTES_VERSION); }
 
 void run_discover(const char *source_folder_string,
                   const char *output_folder_string) {
@@ -53,6 +60,7 @@ void run_discover(const char *source_folder_string,
 #define PROGRAM_ARG 1
 
 int main(int argc, char *argv[]) {
+
   if (argc < MIN_ARGC) {
     error_panic(ERROR_UNKNOWN_PROGRAM);
   }
@@ -62,7 +70,9 @@ int main(int argc, char *argv[]) {
   }
 
   switch (selected_program) {
-
+  case PROGRAM_VERSION:
+    run_version();
+    break;
   case PROGRAM_DISCOVER: {
     const int source_folder_arg = 2;
     const int output_folder_arg = 3;
