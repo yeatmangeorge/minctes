@@ -2,7 +2,6 @@
 CC ?= clang
 BUILD_DIR := build
 SRC_DIR := src
-INC_DIR := include
 TARGET := minctes
 SAN ?= 0
 
@@ -43,8 +42,7 @@ CFLAGS := \
 	$(COMMON_WARNINGS) \
 	$(OPT_FLAGS) \
 	$(DEBUG_FLAGS) \
-	$(SAN_FLAGS) \
-	-I$(INC_DIR)
+	$(SAN_FLAGS) 
 
 # ===== Sources =====
 SRCS := $(shell find $(SRC_DIR) -name '*.c')
@@ -63,7 +61,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 # ===== Utilities =====
 fmt:
-	clang-format -i $(shell find src include -name '*.[ch]')
+	clang-format -i $(shell find src -name '*.[ch]')
 
 clean:
 	rm -rf $(BUILD_DIR)
