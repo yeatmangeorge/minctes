@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "error.h"
 
@@ -43,12 +44,12 @@ typedef struct MinctesRunner {
 #define MINCTES_ASSERT(CONDITION)                                              \
   do {                                                                         \
     if (!(CONDITION)) {                                                        \
-      fprintf(stderr, "Assertion failed --- Test %s - Line: %s - File - %s\n", \
+      fprintf(stderr, "Assertion failed --- Test %s - Line: %d - File - %s\n", \
               __func__, __LINE__, __FILE__);                                   \
       minctes_runner->failed_tests[minctes_runner->current_test] = true;       \
       return;                                                                  \
     }                                                                          \
-    while (false)
+  } while (false)
 
 /**
  * Standard equality check func. Immediately fails and returns from test func if
@@ -62,12 +63,12 @@ typedef struct MinctesRunner {
       fprintf(stderr,                                                          \
               "Equality check failed. Expected" #STRING_FORMAT                 \
               ", but got " #STRING_FORMAT                                      \
-              "--- Test %s - Line: %s - File - %s\n",                          \
+              "--- Test %s - Line: %d - File - %s\n",                          \
               EXPECTED, ACTUAL, __func__, __LINE__, __FILE__);                 \
       minctes_runner->failed_tests[minctes_runner->current_test] = true;       \
       return;                                                                  \
     }                                                                          \
-    while (false)
+  } while (false)
 
 /**
  * Flag that can be used when you get "unused parameter 'minctes_runner'" error
