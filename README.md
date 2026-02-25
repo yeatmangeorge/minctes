@@ -3,6 +3,11 @@
 ## About
 Minctes is a minimal testing framework for C99+. Mostly created for educational purposes.
 
+## Features
+* Automatic test discovery
+* File name convention and macro based test declaration - tests remain close to their code
+* Design ensures that only public APIs are tested
+
 ## Creating tests
 ### Registering a test
 To create a test, first create a file with the following naming scheme:
