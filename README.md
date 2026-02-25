@@ -45,3 +45,7 @@ clang [main.c] -o [output]
 ```
 
 * Execute test_runner 
+
+## Limitations
+* Currently Minctes only supports Linux and MacOS.
+* Single folder for tests
