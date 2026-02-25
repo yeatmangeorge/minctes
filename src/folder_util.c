@@ -40,7 +40,8 @@ static bool path_is_file(const char *path) {
 
 Error file_path_init(FilePath *self, const FolderPath folder_path,
                      const char *file_name) {
-  char *full_path = strcat((char *)folder_path.value, file_name);
+  char full_path[sizeof(FilePath) + 1] = {0};
+  snprintf(full_path, sizeof(full_path), "%s/%s", folder_path.value, file_name);
   if (!path_is_file(full_path)) {
     return ERROR_PATH_IS_NOT_FILE;
   }
