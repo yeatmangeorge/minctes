@@ -35,6 +35,7 @@ void slice_init(Slice *self, const Allocator *allocator,
   self->data = data;
   self->max_cap = max_capacity;
   self->write_head = 0;
+  self->size_of_type = size_of_type;
 }
 
 #define SLICE_MIN_GROW_FACTOR 2

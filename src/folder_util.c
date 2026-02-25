@@ -14,13 +14,14 @@ static bool path_is_folder(const char *path) {
   if (stat(path, &info) != 0) {
     return false;
   }
-  return (info.st_mode & S_IFDIR) != 0;
+  return S_ISDIR(info.st_mode);
 }
 
 Error folder_path_init(FolderPath *self, const char *path_string) {
   if (!path_is_folder(path_string)) {
     return ERROR_PATH_IS_NOT_FOLDER;
   }
+  memset(self->value, 0, PATH_MAX);
   strcpy(self->value, path_string);
   return ERROR_NONE;
 }
@@ -34,7 +35,7 @@ static bool path_is_file(const char *path) {
   if (stat(path, &info) != 0) {
     return false;
   }
-  return (info.st_mode & S_IFREG) != 0;
+  return S_ISREG(info.st_mode);
 }
 
 Error file_path_init(FilePath *self, const FolderPath folder_path,
@@ -43,6 +44,7 @@ Error file_path_init(FilePath *self, const FolderPath folder_path,
   if (!path_is_file(full_path)) {
     return ERROR_PATH_IS_NOT_FILE;
   }
+  memset(self->file_name, 0, FILENAME_MAX);
   self->folder_path = folder_path;
   strcpy(self->file_name, file_name);
   return ERROR_NONE;
