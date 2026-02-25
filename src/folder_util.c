@@ -1,31 +1,21 @@
+#include "folder_util.h"
+
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/syslimits.h>
 
 #include "error.h"
 #include "folder_util.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#else
-#include <sys/stat.h>
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-static bool path_is_folder(const char *path) {
-  DWORD attr = GetFileAttributesA(path);
-  if (attr == INVALID_FILE_ATTRIBUTES)
-    return false;
-  return (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
-}
-#else
 static bool path_is_folder(const char *path) {
   struct stat info;
-  if (stat(path, &info) != 0)
+  if (stat(path, &info) != 0) {
     return false;
+  }
   return (info.st_mode & S_IFDIR) != 0;
 }
-#endif
 
 Error folder_path_init(FolderPath *self, const char *path_string) {
   if (!path_is_folder(path_string)) {
@@ -35,4 +25,30 @@ Error folder_path_init(FolderPath *self, const char *path_string) {
   return ERROR_NONE;
 }
 
-const char *folder_path_as_cstring(FolderPath *self) { return self->value; }
+void folder_path_as_cstring(const FolderPath *self, char *buffer) {
+  snprintf(buffer, PATH_MAX, "%s", self->value);
+}
+
+static bool path_is_file(const char *path) {
+  struct stat info;
+  if (stat(path, &info) != 0) {
+    return false;
+  }
+  return (info.st_mode & S_IFREG) != 0;
+}
+
+Error file_path_init(FilePath *self, const FolderPath folder_path,
+                     const char *file_name) {
+  char *full_path = strcat((char *)folder_path.value, file_name);
+  if (!path_is_file(full_path)) {
+    return ERROR_PATH_IS_NOT_FILE;
+  }
+  self->folder_path = folder_path;
+  strcpy(self->file_name, file_name);
+  return ERROR_NONE;
+}
+
+void file_path_as_cstring(const FilePath *self, char *buffer) {
+  snprintf(buffer, PATH_MAX + FILENAME_MAX, "%s%s", self->folder_path.value,
+           self->file_name);
+}
