@@ -52,6 +52,6 @@ Error file_path_init(FilePath *self, const FolderPath folder_path,
 }
 
 void file_path_as_cstring(const FilePath *self, char *buffer) {
-  snprintf(buffer, PATH_MAX + FILENAME_MAX, "%s%s", self->folder_path.value,
+  snprintf(buffer, PATH_MAX + FILENAME_MAX, "%s/%s", self->folder_path.value,
            self->file_name);
 }

@@ -27,7 +27,7 @@ const Allocator ALLOCATOR_STDLIB = {
     .free = stdlib_free,
 };
 
-#define SLICE_DATA_SIZE_T(SLICE) SLICE->max_cap * SLICE->size_of_type
+#define SLICE_DATA_SIZE_T(SLICE) (SLICE->max_cap * SLICE->size_of_type)
 
 void slice_init(Slice *self, const Allocator *allocator,
                 const size_t size_of_type, const size_t max_capacity) {
@@ -49,7 +49,7 @@ void slice_grow(Slice *self, const Allocator *allocator, const size_t factor) {
 }
 
 void slice_add(Slice *self, const Allocator *allocator, const void *obj) {
-  if (++self->write_head >= self->max_cap) {
+  if (self->write_head >= self->max_cap) {
     size_t current_size = SLICE_DATA_SIZE_T(self);
     self->max_cap *= 2;
     self->data =
@@ -58,6 +58,8 @@ void slice_add(Slice *self, const Allocator *allocator, const void *obj) {
 
   void *write_ptr = (char *)self->data + self->size_of_type * self->write_head;
   memcpy(write_ptr, obj, self->size_of_type);
+
+  self->write_head++;
 }
 
 void slice_free_data(Slice *self, const Allocator *allocator) {
