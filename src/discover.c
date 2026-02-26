@@ -68,9 +68,37 @@ Error minctes_discover(const FolderPath *source_folder,
                        const FolderPath *output_folder) {
 
   (void)output_folder;
-  Slice file_path_slice;
-  slice_init(&file_path_slice, &ALLOCATOR_STDLIB, sizeof(FilePath), 1);
-  find_test_files_in_folder(source_folder, &file_path_slice);
-  slice_free_data(&file_path_slice, &ALLOCATOR_STDLIB);
-  return ERROR_UNIMPLEMENTED;
+  Error err = ERROR_NONE;
+
+  Slice test_file_path_slice;
+  slice_init(&test_file_path_slice, &ALLOCATOR_STDLIB, sizeof(FilePath), 1);
+  err = find_test_files_in_folder(source_folder, &test_file_path_slice);
+  if (err != ERROR_NONE) {
+    goto free_test_file_path_slice;
+  }
+
+  Slice test_name_slice;
+  slice_init(&test_name_slice, &ALLOCATOR_STDLIB,
+             MAX_TEST_NAME_LENGTH * sizeof(char), 1);
+
+  for (size_t i = 0; i < test_file_path_slice.write_head; i++) {
+    FilePath *file_paths = test_file_path_slice.data;
+    char file_path_buffer[PATH_MAX + FILENAME_MAX] = {0};
+    file_path_as_cstring(&file_paths[i], file_path_buffer);
+
+    FILE *file = fopen(file_path_buffer, "r");
+    if (file == NULL) {
+      err = ERROR_COULD_NOT_OPEN_FILE;
+      goto free_test_name_slice;
+    }
+
+    // discover_tests_in_file(file, &test_name_slice);
+    fclose(file);
+  }
+
+free_test_name_slice:
+  slice_free_data(&test_name_slice, &ALLOCATOR_STDLIB);
+free_test_file_path_slice:
+  slice_free_data(&test_file_path_slice, &ALLOCATOR_STDLIB);
+  return err;
 }
