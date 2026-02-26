@@ -42,17 +42,17 @@ void run_discover(const char *source_folder_string,
 
   error = folder_path_init(&source_folder, source_folder_string);
   if (error != ERROR_NONE) {
-    error_panic(error);
+    error_panic(error, ERROR_CTX);
   };
 
   error = folder_path_init(&output_folder, output_folder_string);
   if (error != ERROR_NONE) {
-    error_panic(error);
+    error_panic(error, ERROR_CTX);
   }
 
   error = minctes_discover(&source_folder, &output_folder);
   if (error != ERROR_NONE) {
-    error_panic(error);
+    error_panic(error, ERROR_CTX);
   }
 }
 
@@ -62,11 +62,11 @@ void run_discover(const char *source_folder_string,
 int main(int argc, char *argv[]) {
 
   if (argc < MIN_ARGC) {
-    error_panic(ERROR_UNKNOWN_PROGRAM);
+    error_panic(ERROR_UNKNOWN_PROGRAM, ERROR_CTX);
   }
   Program selected_program = program_from_string(argv[PROGRAM_ARG]);
   if (selected_program == PROGRAM_NONE) {
-    error_panic(ERROR_UNKNOWN_PROGRAM);
+    error_panic(ERROR_UNKNOWN_PROGRAM, ERROR_CTX);
   }
 
   switch (selected_program) {
@@ -80,11 +80,11 @@ int main(int argc, char *argv[]) {
     break;
   }
   case PROGRAM_BUILD:
-    error_panic(ERROR_UNIMPLEMENTED);
+    error_panic(ERROR_UNIMPLEMENTED, ERROR_CTX);
     break;
   case PROGRAM_NONE:
   case PROGRAM_COUNT:
-    error_panic(ERROR_UNKNOWN_PROGRAM);
+    error_panic(ERROR_UNKNOWN_PROGRAM, ERROR_CTX);
     break;
   }
 

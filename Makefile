@@ -1,14 +1,7 @@
-# ===== User Config =====
 CC ?= clang
-BUILD_DIR := build
 SRC_DIR := src
 TARGET := minctes
 
-# Set DEBUG=1 for debugging, SAN=1 for sanitizers
-DEBUG ?= 1
-SAN ?= 1
-
-# ===== Compiler Standard & Warnings =====
 C_STANDARD := c99
 
 COMMON_WARNINGS := \
@@ -24,52 +17,55 @@ COMMON_WARNINGS := \
 	-Wnull-dereference \
 	-Wimplicit-fallthrough
 
-# ===== Optimization and Debug Flags =====
-OPT_FLAGS := -O2
-DEBUG_FLAGS := -g3
-SAN_FLAGS :=
-SAN_LDFLAGS :=
+BASE_CFLAGS := -std=$(C_STANDARD) $(COMMON_WARNINGS)
 
-ifeq ($(DEBUG),1)
-	# Debug build: no optimization
-	OPT_FLAGS := -O0
-	DEBUG_FLAGS := -g3
-endif
-
-ifeq ($(SAN),1)
-	# Enable ASan/UBSan if requested
-	SAN_FLAGS += -fsanitize=address,undefined -fno-omit-frame-pointer
-	SAN_LDFLAGS += -fsanitize=address,undefined
-	# Reduce optimization for sanitizer builds
-	ifeq ($(DEBUG),0)
-		OPT_FLAGS := -O1
-	endif
-endif
-
-CFLAGS := -std=$(C_STANDARD) $(COMMON_WARNINGS) $(OPT_FLAGS) $(DEBUG_FLAGS) $(SAN_FLAGS)
-
-# ===== Source Files =====
 SRCS := $(shell find $(SRC_DIR) -name '*.c' ! -name '*.t.c')
+
+CONFIG ?= debug
+
+ifeq ($(CONFIG),release)
+	BUILD_DIR := build/release
+	CFLAGS := $(BASE_CFLAGS) -O2
+	LDFLAGS :=
+endif
+
+ifeq ($(CONFIG),debug)
+	BUILD_DIR := build/debug
+	CFLAGS := $(BASE_CFLAGS) -O0 -g3 -DDEBUG \
+	          -fsanitize=address,undefined -fno-omit-frame-pointer
+	LDFLAGS := -fsanitize=address,undefined
+endif
+
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
-# ===== Targets =====
-all: fmt $(BUILD_DIR)/$(TARGET)
+# ==========================================================
+# Targets
+# ==========================================================
+
+all: $(CONFIG)
+
+release:
+	@$(MAKE) CONFIG=release build
+
+debug:
+	@$(MAKE) CONFIG=debug build
+
+build: fmt $(BUILD_DIR)/$(TARGET)
 
 $(BUILD_DIR)/$(TARGET): $(OBJS)
 	@mkdir -p $(dir $@)
-	$(CC) $(OBJS) -o $@ $(SAN_LDFLAGS)
+	$(CC) $(OBJS) -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# ===== Utilities =====
 fmt:
 	clang-format -i $(shell find $(SRC_DIR) -name '*.[ch]')
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf build
 
 rebuild: clean all
 
-.PHONY: all clean rebuild fmt
+.PHONY: all release debug build clean rebuild fmt

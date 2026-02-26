@@ -8,7 +8,7 @@ static void stdlib_free(void *self) { free(self); }
 static void *stdlib_memory_safe_malloc(const size_t size) {
   void *result = malloc(size);
   if (result == NULL) {
-    error_panic(ERROR_OUT_OF_MEMORY);
+    error_panic(ERROR_OUT_OF_MEMORY, ERROR_CTX);
   }
   return result;
 }
@@ -41,7 +41,7 @@ void slice_init(Slice *self, const Allocator *allocator,
 #define SLICE_MIN_GROW_FACTOR 2
 void slice_grow(Slice *self, const Allocator *allocator, const size_t factor) {
   if (factor < SLICE_MIN_GROW_FACTOR) {
-    error_panic(ERROR_INVALID_PARAM);
+    error_panic(ERROR_INVALID_PARAM, ERROR_CTX);
   }
   size_t old_size = SLICE_DATA_SIZE_T(self);
   self->max_cap *= factor;
