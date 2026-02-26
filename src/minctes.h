@@ -5,11 +5,12 @@
 
 #include "error.h"
 
-#define MAX_TESTS 2000
-#define MAX_TEST_NAME_LENGTH 256
-#define MINCTES_REGISTRATION_FUNC_PREFIX minctes_register_
 #define MACRO_NAME_CONCAT_INNER(A, B) A##B
 #define MACRO_NAME_CONCAT(A, B) MACRO_NAME_CONCAT_INNER(A, B)
+
+#define MAX_TESTS 2000
+#define MAX_TEST_NAME_LENGTH 256
+const char minctes_registration_macro_prefix[] = "MINCTES(";
 
 typedef struct MinctesRunner _MinctesRunner;
 typedef void (*test_function)(_MinctesRunner *minctes_runner);
@@ -38,7 +39,7 @@ typedef struct MinctesRunner {
     mr->test_functions[mr->test_count] = &TEST_NAME;                           \
     mr->test_count++;                                                          \
     if (mr->test_count == MAX_TESTS)                                           \
-      error_panic(ERROR_TOO_MANY_TESTS, ERROR_CTX);                                       \
+      error_panic(ERROR_TOO_MANY_TESTS, ERROR_CTX);                            \
   }                                                                            \
   void TEST_NAME(MinctesRunner *minctes_runner)
 
