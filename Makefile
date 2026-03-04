@@ -1,12 +1,7 @@
-# ===== User Config =====
 CC ?= clang
-BUILD_DIR := build
 SRC_DIR := src
-INC_DIR := include
 TARGET := minctes
-SAN ?= 0
 
-# ===== Compiler Flags =====
 C_STANDARD := c99
 
 COMMON_WARNINGS := \
@@ -22,52 +17,55 @@ COMMON_WARNINGS := \
 	-Wnull-dereference \
 	-Wimplicit-fallthrough
 
-OPT_FLAGS := -O2
-DEBUG_FLAGS := -g3
+BASE_CFLAGS := -std=$(C_STANDARD) $(COMMON_WARNINGS)
 
-SAN_FLAGS :=
-SAN_LDFLAGS :=
+SRCS := $(shell find $(SRC_DIR) -name '*.c' ! -name '*.t.c')
 
-ifeq ($(SAN),1)
-SAN_FLAGS += \
-	-fsanitize=address,undefined \
-	-fno-omit-frame-pointer \
-	-O1
+CONFIG ?= debug
 
-SAN_LDFLAGS += \
-	-fsanitize=address,undefined
+ifeq ($(CONFIG),release)
+	BUILD_DIR := build/release
+	CFLAGS := $(BASE_CFLAGS) -O2
+	LDFLAGS :=
 endif
 
-CFLAGS := \
-	-std=$(C_STANDARD) \
-	$(COMMON_WARNINGS) \
-	$(OPT_FLAGS) \
-	$(DEBUG_FLAGS) \
-	$(SAN_FLAGS) \
-	-I$(INC_DIR)
+ifeq ($(CONFIG),debug)
+	BUILD_DIR := build/debug
+	CFLAGS := $(BASE_CFLAGS) -O0 -g3 -DDEBUG \
+	          -fsanitize=address,undefined -fno-omit-frame-pointer
+	LDFLAGS := -fsanitize=address,undefined
+endif
 
-# ===== Sources =====
-SRCS := $(shell find $(SRC_DIR) -name '*.c')
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
-# ===== Targets =====
-all: fmt $(BUILD_DIR)/$(TARGET)
+# ==========================================================
+# Targets
+# ==========================================================
+
+all: $(CONFIG)
+
+release:
+	@$(MAKE) CONFIG=release build
+
+debug:
+	@$(MAKE) CONFIG=debug build
+
+build: fmt $(BUILD_DIR)/$(TARGET)
 
 $(BUILD_DIR)/$(TARGET): $(OBJS)
 	@mkdir -p $(dir $@)
-	$(CC) $(OBJS) -o $@ $(SAN_LDFLAGS)
+	$(CC) $(OBJS) -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# ===== Utilities =====
 fmt:
-	clang-format -i $(shell find src include -name '*.[ch]')
+	clang-format -i $(shell find $(SRC_DIR) -name '*.[ch]')
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf build
 
 rebuild: clean all
 
-.PHONY: all clean rebuild fmt
+.PHONY: all release debug build clean rebuild fmt

@@ -3,6 +3,11 @@
 ## About
 Minctes is a minimal testing framework for C99+. Mostly created for educational purposes.
 
+## Features
+* Automatic test discovery
+* File name convention and macro based test declaration - tests remain close to their code
+* Design ensures that only public APIs are tested
+
 ## Creating tests
 ### Registering a test
 To create a test, first create a file with the following naming scheme:
@@ -31,7 +36,7 @@ MINCTES_EQUALS([actual],[expected],[string_format])
 ```BASH
 minctes discover [src_folder] [output_folder]
 ```
-This will generate a discovered_tests.h file.
+This will generate a discovered_tests.g.c file.
 
 * Create a library archive of your project to run tests against.
 
@@ -45,3 +50,7 @@ clang [main.c] -o [output]
 ```
 
 * Execute test_runner 
+
+## Limitations
+* Currently Minctes only supports Linux and MacOS.
+* Single folder for tests
