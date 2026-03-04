@@ -12,11 +12,11 @@ void minctes_util_tests_in_file(FILE *file, Slice *test_name_slice) {
    * the c preprocessor to expand the test delaration, and then detect the
    * registration function name from the intermediate file. This would reduce
    * name collisions,as the expanded prefix could be more unique*/
-  static const char prefix_length = strlen(minctes_registration_macro_prefix);
+  static const char prefix_length = strlen(MINCTES_REGISTRATION_MACRO_PREFIX);
   char word[MAX_TEST_NAME_LENGTH];
   rewind(file);
   while (fscanf(file, "%s", word) == true) {
-    if (strstr(word, minctes_registration_macro_prefix)) {
+    if (strstr(word, MINCTES_REGISTRATION_MACRO_PREFIX)) {
       char trimmed_name[MAX_TEST_NAME_LENGTH] = {0};
       size_t len = strlen(word);
       for (size_t i = 0; i < len; i++) {

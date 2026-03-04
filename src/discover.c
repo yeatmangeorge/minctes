@@ -16,7 +16,7 @@
 #define TEST_FILE_EXTENSION ".t.c"
 
 static bool file_path_is_test_file(const FilePath *self) {
-  char buffer[PATH_MAX + FILENAME_MAX] = {0};
+  char buffer[PATH_MAX] = {0};
   file_path_as_cstring(self, buffer);
 
   size_t len = strlen(buffer);
@@ -51,7 +51,7 @@ static Error find_test_files_in_folder(const FolderPath *source_folder,
       memcpy(file_name_buffer, directory_entry_buffer->d_name,
              directory_entry_buffer->d_namlen);
       FilePath file_path;
-      file_path_init(&file_path, *source_folder, file_name_buffer);
+      file_path_init(&file_path, source_folder, file_name_buffer);
       if (file_path_is_test_file(&file_path)) {
         slice_add(file_path_slice, &ALLOCATOR_STDLIB, &file_path);
       }
@@ -105,7 +105,6 @@ static Error add_main_func_to_output_file(FILE *output_file,
 
 Error minctes_discover(const FolderPath *source_folder,
                        const FolderPath *output_folder) {
-  (void)output_folder;
   Error err = ERROR_NONE;
 
   Slice test_file_path_slice;
@@ -119,12 +118,9 @@ Error minctes_discover(const FolderPath *source_folder,
   slice_init(&test_name_slice, &ALLOCATOR_STDLIB,
              MAX_TEST_NAME_LENGTH * sizeof(char), 1);
 
+  FilePath *file_paths = test_file_path_slice.data;
   for (size_t i = 0; i < test_file_path_slice.write_head; i++) {
-    FilePath *file_paths = test_file_path_slice.data;
-    char file_path_buffer[PATH_MAX + FILENAME_MAX] = {0};
-    file_path_as_cstring(&file_paths[i], file_path_buffer);
-
-    FILE *file = fopen(file_path_buffer, "r");
+    FILE *file = file_path_fopen(&file_paths[i], "r");
     if (file == NULL) {
       err = ERROR_COULD_NOT_OPEN_FILE;
       goto free_test_name_slice;
@@ -136,12 +132,9 @@ Error minctes_discover(const FolderPath *source_folder,
     fclose(file);
   }
 
-  char output_file_path_buffer[PATH_MAX] = {0};
-  folder_path_as_cstring(output_folder, output_file_path_buffer);
-  size_t len = strlen(output_file_path_buffer);
-  snprintf(output_file_path_buffer + len, sizeof(output_file_path_buffer) - len,
-           "/%s", OUTPUT_FILE_NAME);
-  FILE *output_file = fopen(output_file_path_buffer, "w");
+  FilePath output_file_path;
+  file_path_init(&output_file_path, output_folder, OUTPUT_FILE_NAME);
+  FILE *output_file = file_path_fopen(&output_file_path, "w");
   if (output_file == NULL) {
     err = ERROR_COULD_NOT_OPEN_FILE;
     goto free_test_name_slice;

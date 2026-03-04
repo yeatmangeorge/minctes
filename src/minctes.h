@@ -11,7 +11,7 @@
 
 #define MAX_TESTS 2000
 #define MAX_TEST_NAME_LENGTH 256
-const char minctes_registration_macro_prefix[] = "MINCTES(";
+#define MINCTES_REGISTRATION_MACRO_PREFIX "MINCTES("
 
 typedef struct MinctesRunner _MinctesRunner;
 typedef void (*test_function)(_MinctesRunner *minctes_runner);
