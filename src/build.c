@@ -2,13 +2,50 @@
 #include "discover.h"
 #include "error.h"
 #include "folder_util.h"
+#include "memory_util.h"
+#include "minctes.h"
+#include "minctes_util.h"
+#include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/syslimits.h>
 
 #define MINCTES_MAIN_C_FILE_NAME "minctes_main.g.c"
 
-static Error write_output_to_minctes_main_c(const FilePath *main_c_file_path) {
+static Error
+discover_tests_in_discover_output(const FolderPath *output_folder_path,
+                                  Slice *test_name_slice) {
   Error err = ERROR_NONE;
+  if (test_name_slice->size_of_type != sizeof(char) * MAX_TEST_NAME_LENGTH) {
+    return ERROR_INVALID_PARAM;
+  }
+
+  FilePath discovered_tests_file_path;
+  err = file_path_init(&discovered_tests_file_path, output_folder_path,
+                       DISCOVERED_TESTS_FILE_NAME);
+  if (err != ERROR_NONE) {
+    return err;
+  }
+
+  FILE *discovered_tests_file =
+      file_path_fopen(&discovered_tests_file_path, "r");
+  if (discovered_tests_file == NULL) {
+    return ERROR_COULD_NOT_OPEN_FILE;
+  }
+
+  minctes_util_tests_in_file(discovered_tests_file, test_name_slice,
+                             TEST_IN_FILE_PREFIX_TYPE_PROCESSED);
+
+  fclose(discovered_tests_file);
+  return err;
+}
+
+static Error write_output_to_minctes_main_c(const FilePath *main_c_file_path,
+                                            const Slice *test_name_slice) {
+  Error err = ERROR_NONE;
+  if (test_name_slice->size_of_type != sizeof(char) * MAX_TEST_NAME_LENGTH) {
+    return ERROR_INVALID_PARAM;
+  }
 
   FILE *output_file = file_path_fopen(main_c_file_path, "w");
   if (output_file == NULL) {
@@ -20,10 +57,27 @@ static Error write_output_to_minctes_main_c(const FilePath *main_c_file_path) {
               "#include \"minctes.h\"\n"
               "#include \"%s\"\n\n"
               "int main(){\n"
-              // TODO add test functions
-              "\t\n"
-              "}\n",
+              // TODO should probably be safe malloced
+              "\tMinctesRunner mr;\n"
+              "\tminctes_runner_init(&mr);\n\n",
               DISCOVERED_TESTS_FILE_NAME) < 0) {
+    err = ERROR_COULD_NOT_WRITE_TO_FILE;
+    goto close_output_file;
+  }
+
+  char buffer[MAX_TEST_NAME_LENGTH] = {0};
+  for (size_t i = 0; i < test_name_slice->write_head; i++) {
+    memset(buffer, 0, sizeof(char) * MAX_TEST_NAME_LENGTH);
+    memcpy(buffer, "minctes_register_", strlen("minctes_register_"));
+    strcat(buffer, (char *)slice_get(test_name_slice, i));
+    // TODO this should not be as hard coded - will desync if macro is changed
+    if (fprintf(output_file, "\t%s(&mr);\n", buffer) < 0) {
+      err = ERROR_COULD_NOT_WRITE_TO_FILE;
+      goto close_output_file;
+    };
+  }
+
+  if (fprintf(output_file, "}\n") < 0) {
     err = ERROR_COULD_NOT_WRITE_TO_FILE;
     goto close_output_file;
   }
@@ -41,11 +95,21 @@ static Error create_minctes_main_c(const FolderPath *output_folder_path) {
   file_path_init(&main_c_file_path, output_folder_path,
                  MINCTES_MAIN_C_FILE_NAME);
 
-  err = write_output_to_minctes_main_c(&main_c_file_path);
+  Slice test_name_slice;
+  slice_init(&test_name_slice, &ALLOCATOR_STDLIB,
+             sizeof(char) * MAX_TEST_NAME_LENGTH, 1);
+  err = discover_tests_in_discover_output(output_folder_path, &test_name_slice);
   if (err != ERROR_NONE) {
-    return err;
+    goto free_test_name_slice;
   }
 
+  err = write_output_to_minctes_main_c(&main_c_file_path, &test_name_slice);
+  if (err != ERROR_NONE) {
+    goto free_test_name_slice;
+  }
+
+free_test_name_slice:
+  slice_free_data(&test_name_slice, &ALLOCATOR_STDLIB);
   return err;
 }
 

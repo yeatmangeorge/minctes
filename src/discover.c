@@ -128,7 +128,8 @@ Error minctes_discover(const FolderPath *source_folder,
 
     // TODO
     //  discover_includes_in_file(file, &)
-    minctes_util_tests_in_file(file, &test_name_slice);
+    minctes_util_tests_in_file(file, &test_name_slice,
+                               TEST_IN_FILE_PREFIX_TYPE_UNPROCESSED);
     fclose(file);
   }
 
