@@ -1,5 +1,6 @@
 #include "memory_util.h"
 #include "error.h"
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -64,6 +65,14 @@ void slice_add(Slice *self, const Allocator *allocator, const void *obj) {
 
 void slice_free_data(Slice *self, const Allocator *allocator) {
   allocator->free(self->data);
+}
+
+void *slice_get(const Slice *self, const size_t idx) {
+  if (idx > self->write_head) {
+    error_panic(ERROR_INVALID_PARAM, ERROR_CTX);
+  }
+
+  return (char *)self->data + (idx * self->size_of_type);
 }
 
 #undef SLICE_MIN_GROW_FACTOR

@@ -38,3 +38,4 @@ void slice_init(Slice *self, const Allocator *allocator,
 void slice_grow(Slice *self, const Allocator *allocator, const size_t factor);
 void slice_add(Slice *self, const Allocator *allocator, const void *obj);
 void slice_free_data(Slice *self, const Allocator *allocator);
+void *slice_get(const Slice *self, const size_t idx);
