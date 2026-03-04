@@ -133,7 +133,7 @@ Error minctes_discover(const FolderPath *source_folder,
   }
 
   FilePath output_file_path;
-  file_path_init(&output_file_path, output_folder, OUTPUT_FILE_NAME);
+  file_path_init(&output_file_path, output_folder, DISCOVERED_TESTS_FILE_NAME);
   FILE *output_file = file_path_fopen(&output_file_path, "w");
   if (output_file == NULL) {
     err = ERROR_COULD_NOT_OPEN_FILE;

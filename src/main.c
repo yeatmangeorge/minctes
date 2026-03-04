@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "build.h"
 #include "discover.h"
 #include "error.h"
+#include "folder_util.h"
 
 #ifndef MINCTES_VERSION
 #define MINCTES_VERSION "x.x.x"
@@ -56,6 +58,26 @@ void run_discover(const char *source_folder_string,
   }
 }
 
+void run_build(const char *c_compiler, const char *library_file_path_string,
+               const char *output_folder_string) {
+  Error error = ERROR_NONE;
+
+  // TODO init
+  FilePath library_file_path;
+  (void)library_file_path_string;
+
+  FolderPath output_folder;
+  error = folder_path_init(&output_folder, output_folder_string);
+  if (error != ERROR_NONE) {
+    error_panic(error, ERROR_CTX);
+  }
+
+  error = minctes_build(c_compiler, &library_file_path, &output_folder);
+  if (error != ERROR_NONE) {
+    error_panic(error, ERROR_CTX);
+  }
+}
+
 #define MIN_ARGC 2
 #define PROGRAM_ARG 1
 
@@ -79,13 +101,19 @@ int main(int argc, char *argv[]) {
     run_discover(argv[source_folder_arg], argv[output_folder_arg]);
     break;
   }
-  case PROGRAM_BUILD:
-    error_panic(ERROR_UNIMPLEMENTED, ERROR_CTX);
+  case PROGRAM_BUILD: {
+    const int c_compiler_arg = 2;
+    const int library_file_path_arg = 3;
+    const int output_folder_path_arg = 4;
+    run_build(argv[c_compiler_arg], argv[library_file_path_arg],
+              argv[output_folder_path_arg]);
     break;
+  }
   case PROGRAM_NONE:
-  case PROGRAM_COUNT:
+  case PROGRAM_COUNT: {
     error_panic(ERROR_UNKNOWN_PROGRAM, ERROR_CTX);
     break;
+  }
   }
 
   return ERROR_NONE;
