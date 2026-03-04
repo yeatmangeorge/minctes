@@ -36,7 +36,7 @@ MINCTES_EQUALS([actual],[expected],[string_format])
 ```BASH
 minctes discover [src_folder] [output_folder]
 ```
-This will generate a discovered_tests.g.c file.
+This will generate a discovered_tests.g.h file.
 
 * Create a library archive of your project to run tests against.
 
