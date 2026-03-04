@@ -11,9 +11,9 @@
 #include "folder_util.h"
 #include "memory_util.h"
 #include "minctes.h"
+#include "minctes_util.h"
 
 #define TEST_FILE_EXTENSION ".t.c"
-#define OUTPUT_FILE_NAME "discovered_tests.g.h"
 
 static bool file_path_is_test_file(const FilePath *self) {
   char buffer[PATH_MAX + FILENAME_MAX] = {0};
@@ -60,33 +60,6 @@ static Error find_test_files_in_folder(const FolderPath *source_folder,
 
   closedir(directory);
   return err;
-}
-
-static void discover_tests_in_file(FILE *file, Slice *test_name_slice) {
-  /*TODO: This could cause issues if someone puts the prefix in the middle of a
-   * function name or comments. Also, in the future, it would be better to get
-   * the c preprocessor to expand the test delaration, and then detect the
-   * registration function name from the intermediate file. This would reduce
-   * name collisions,as the expanded prefix could be more unique*/
-  static const char prefix_length = strlen(minctes_registration_macro_prefix);
-  char word[MAX_TEST_NAME_LENGTH];
-  rewind(file);
-  while (fscanf(file, "%s", word) == true) {
-    if (strstr(word, minctes_registration_macro_prefix)) {
-      char trimmed_name[MAX_TEST_NAME_LENGTH] = {0};
-      size_t len = strlen(word);
-      for (size_t i = 0; i < len; i++) {
-        if (i < prefix_length) {
-          continue;
-        }
-        if (word[i] == ')') {
-          break;
-        }
-        trimmed_name[i - prefix_length] = word[i];
-      }
-      slice_add(test_name_slice, &ALLOCATOR_STDLIB, trimmed_name);
-    }
-  }
 }
 
 static Error add_header_to_output_file(FILE *output_file) {
@@ -159,7 +132,7 @@ Error minctes_discover(const FolderPath *source_folder,
 
     // TODO
     //  discover_includes_in_file(file, &)
-    discover_tests_in_file(file, &test_name_slice);
+    minctes_util_tests_in_file(file, &test_name_slice);
     fclose(file);
   }
 
