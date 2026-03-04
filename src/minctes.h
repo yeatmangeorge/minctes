@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "error.h"
 
@@ -22,6 +23,17 @@ typedef struct MinctesRunner {
   int test_count;
   int current_test;
 } MinctesRunner;
+
+static inline void minctes_runner_init(MinctesRunner *self) {
+  if (!self) {
+    return;
+  }
+  memset(self->test_names, 0, sizeof(self->test_names));
+  memset(self->failed_tests, 0, sizeof(self->failed_tests));
+  memset(self->test_functions, 0, sizeof(self->test_functions));
+  self->test_count = 0;
+  self->current_test = 0;
+}
 
 /**
  * Macro used to define Minctes tests.
