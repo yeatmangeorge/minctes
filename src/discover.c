@@ -6,6 +6,7 @@
 #include "memory_util.h"
 #include "minctes.h"
 #include "minctes_util.h"
+#include <_stdlib.h>
 #include <dirent.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -64,6 +65,37 @@ static Error discover_includes_in_file(const Compiler compiler,
 
 close_pipe:
   pclose(pipe);
+  return err;
+}
+
+static Error
+write_test_file_paths_to_directory(const FolderPath *output_folder_path,
+                                   const Slice *test_file_path_slice) {
+  Error err = ERROR_NONE;
+  if (test_file_path_slice->size_of_type != sizeof(FilePath)) {
+    return ERROR_INVALID_PARAM;
+  }
+
+  FilePath directory_file_path;
+  file_path_init(&directory_file_path, output_folder_path,
+                 DISCOVERED_TESTS_DIRECTORY_FILE_NAME);
+  FILE *directory_file = file_path_fopen(&directory_file_path, "w");
+
+  for (size_t i = 0; i < test_file_path_slice->write_head; i++) {
+    FilePath *test_file_path = (FilePath *)slice_get(test_file_path_slice, i);
+    const char test_file_name_buffer[PATH_MAX];
+    const char resolved_path_buffer[PATH_MAX];
+    file_path_as_cstring(test_file_path, (char *)test_file_name_buffer);
+    realpath(test_file_name_buffer, (char *)resolved_path_buffer);
+
+    if (fprintf(directory_file, "%s\n", resolved_path_buffer) < 0) {
+      err = ERROR_COULD_NOT_WRITE_TO_FILE;
+      goto close_directory_file;
+    }
+  }
+
+close_directory_file:
+  fclose(directory_file);
   return err;
 }
 
@@ -179,6 +211,12 @@ Error minctes_discover(const Compiler compiler, const FolderPath *source_folder,
   slice_init(&includes_slice, &ALLOCATOR_STDLIB, PATH_MAX * sizeof(char), 1);
 
   FilePath *file_paths = test_file_path_slice.data;
+  err =
+      write_test_file_paths_to_directory(output_folder, &test_file_path_slice);
+  if (err != ERROR_NONE) {
+    goto free_test_file_path_slice;
+  }
+
   for (size_t i = 0; i < test_file_path_slice.write_head; i++) {
     FILE *file = file_path_fopen(&file_paths[i], "r");
     if (file == NULL) {
@@ -193,7 +231,8 @@ Error minctes_discover(const Compiler compiler, const FolderPath *source_folder,
   }
 
   FilePath output_file_path;
-  file_path_init(&output_file_path, output_folder, DISCOVERED_TESTS_FILE_NAME);
+  file_path_init(&output_file_path, output_folder,
+                 DISCOVERED_TESTS_HEADER_FILE_NAME);
   FILE *output_file = file_path_fopen(&output_file_path, "w");
   if (output_file == NULL) {
     err = ERROR_COULD_NOT_OPEN_FILE;

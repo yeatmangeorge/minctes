@@ -22,7 +22,7 @@ discover_tests_in_discover_output(const FolderPath *output_folder_path,
 
   FilePath discovered_tests_file_path;
   err = file_path_init(&discovered_tests_file_path, output_folder_path,
-                       DISCOVERED_TESTS_FILE_NAME);
+                       DISCOVERED_TESTS_HEADER_FILE_NAME);
   if (err != ERROR_NONE) {
     return err;
   }
@@ -59,7 +59,7 @@ static Error write_output_to_minctes_main_c(const FilePath *main_c_file_path,
               // TODO should probably be safe malloced
               "\tMinctesRunner mr;\n"
               "\tminctes_runner_init(&mr);\n\n",
-              DISCOVERED_TESTS_FILE_NAME) < 0) {
+              DISCOVERED_TESTS_HEADER_FILE_NAME) < 0) {
     err = ERROR_COULD_NOT_WRITE_TO_FILE;
     goto close_output_file;
   }
