@@ -112,7 +112,8 @@ free_test_name_slice:
   return err;
 }
 
-Error minctes_build(const char *c_compiler, const FilePath *library_file_path,
+Error minctes_build(const Compiler c_compiler,
+                    const FilePath *library_file_path,
                     const FolderPath *output_folder) {
   (void)c_compiler;
   (void)library_file_path;

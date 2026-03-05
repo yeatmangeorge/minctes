@@ -1,5 +1,6 @@
 #include "discover.h"
 
+#include "compiler.h"
 #include "error.h"
 #include "folder_util.h"
 #include "memory_util.h"
@@ -15,9 +16,9 @@
 
 #define TEST_FILE_EXTENSION ".t.c"
 #define HEADER_EXTENSION ".h"
-#define CLANG_HEADER_COMMAND "clang -M %s"
 
-static Error discover_includes_in_file(FilePath *file_path,
+static Error discover_includes_in_file(const Compiler compiler,
+                                       FilePath *file_path,
                                        Slice *includes_slice) {
   if (includes_slice->size_of_type != sizeof(char) * PATH_MAX) {
     return ERROR_INVALID_PARAM;
@@ -26,10 +27,13 @@ static Error discover_includes_in_file(FilePath *file_path,
   char file_path_buffer[PATH_MAX];
   file_path_as_cstring(file_path, file_path_buffer);
 
-  // TODO should have option for different compilers via enum
-  char command_buffer[sizeof(CLANG_HEADER_COMMAND) + PATH_MAX];
-  snprintf(command_buffer, sizeof(command_buffer), CLANG_HEADER_COMMAND,
-           file_path_buffer);
+  char command_buffer[sizeof(compiler_include_commands[compiler]) + PATH_MAX];
+// TODO not ideal, but fine for now
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+  snprintf(command_buffer, sizeof(command_buffer),
+           compiler_include_commands[compiler], file_path_buffer);
+#pragma clang diagnostic pop
 
   FILE *pipe = popen(command_buffer, "r");
   if (pipe == NULL) {
@@ -157,7 +161,7 @@ static Error add_main_func_to_output_file(FILE *output_file,
   return err;
 }
 
-Error minctes_discover(const FolderPath *source_folder,
+Error minctes_discover(const Compiler compiler, const FolderPath *source_folder,
                        const FolderPath *output_folder) {
   Error err = ERROR_NONE;
 
@@ -182,7 +186,7 @@ Error minctes_discover(const FolderPath *source_folder,
       goto free_discovery_slices;
     }
 
-    discover_includes_in_file(&file_paths[i], &includes_slice);
+    discover_includes_in_file(compiler, &file_paths[i], &includes_slice);
     minctes_util_tests_in_file(file, &test_name_slice,
                                TEST_IN_FILE_PREFIX_TYPE_UNPROCESSED);
     fclose(file);
