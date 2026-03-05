@@ -11,6 +11,7 @@
 #include <sys/syslimits.h>
 
 #define MINCTES_MAIN_C_FILE_NAME "minctes_main.g.c"
+#define MINCTES_TEST_RUNNER_FILE_NAME "test_runner"
 
 static Error
 discover_tests_in_discover_output(const FolderPath *output_folder_path,
@@ -112,6 +113,62 @@ free_test_name_slice:
   return err;
 }
 
+static Error append_to_build_cmd_slice(Slice *build_cmd_slice,
+                                       const char *str) {
+  if (build_cmd_slice->size_of_type != sizeof(char)) {
+    return ERROR_INVALID_PARAM;
+  }
+  slice_add(build_cmd_slice, &ALLOCATOR_STDLIB, " ");
+  size_t len = strlen(str);
+  char char_buffer;
+  for (size_t i = 0; i < len; i++) {
+    char_buffer = str[i];
+    slice_add(build_cmd_slice, &ALLOCATOR_STDLIB, &char_buffer);
+  }
+  return ERROR_NONE;
+}
+
+static Error compile_build_runner(const FilePath *library_file_path,
+                                  const FolderPath *output_folder) {
+  (void)library_file_path;
+  Error err = ERROR_NONE;
+  Slice build_cmd_slice;
+  slice_init(&build_cmd_slice, &ALLOCATOR_STDLIB, sizeof(char), 10);
+  //TODO can't have this hard coded to clang
+  err = append_to_build_cmd_slice(&build_cmd_slice, "clang");
+  if (err != ERROR_NONE) {
+    goto free_cmd_slice;
+  }
+
+  FilePath discovered_tests_directory_file_path;
+  err = file_path_init(&discovered_tests_directory_file_path, output_folder,
+                       DISCOVERED_TESTS_DIRECTORY_FILE_NAME);
+  if (err != ERROR_NONE) {
+    goto free_cmd_slice;
+  }
+  FILE *discovered_tests_directory_file =
+      file_path_fopen(&discovered_tests_directory_file_path, "r");
+  if (discovered_tests_directory_file == NULL) {
+    err = ERROR_COULD_NOT_OPEN_FILE;
+    goto free_cmd_slice;
+  }
+
+  char test_file_path_buffer[PATH_MAX];
+  while (fscanf(discovered_tests_directory_file, "%s", test_file_path_buffer) ==
+         true) {
+    err = append_to_build_cmd_slice(&build_cmd_slice, test_file_path_buffer);
+    if (err != ERROR_NONE) {
+      goto close_discovered_tests_directory_file;
+    }
+  }
+
+close_discovered_tests_directory_file:
+  fclose(discovered_tests_directory_file);
+free_cmd_slice:
+  slice_free_data(&build_cmd_slice, &ALLOCATOR_STDLIB);
+  return err;
+}
+
 Error minctes_build(const Compiler c_compiler,
                     const FilePath *library_file_path,
                     const FolderPath *output_folder) {
@@ -122,6 +179,6 @@ Error minctes_build(const Compiler c_compiler,
   if (err != ERROR_NONE) {
     return err;
   }
-  // compile_build_runner(c_compiler, test_files.c, library, output)
+  err = compile_build_runner(library_file_path, output_folder);
   return err;
 }
