@@ -11,6 +11,12 @@ const char *compiler_include_commands[] = {
 #undef X
 };
 
+const char *compiler_to_string[] = {
+#define X(NAME, _) #NAME,
+#include "compiler.x"
+#undef X
+};
+
 Compiler compiler_from_string(const char *string) {
   size_t string_len = strlen(string);
   if (string_len >= COMPILER_NAME_MAX)
