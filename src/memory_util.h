@@ -49,7 +49,7 @@ void slice_init(Slice *self, const Allocator *allocator,
 /**
  * Resizes the memory used by the slice, multiplied by the provided factor.
  *
- * factor must be above 2.
+ * factor must be two or higher.
  */
 void slice_grow(Slice *self, const size_t factor);
 /**
