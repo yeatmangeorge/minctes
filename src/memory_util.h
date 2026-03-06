@@ -27,15 +27,16 @@ typedef struct Allocator {
 extern const struct Allocator ALLOCATOR_STDLIB;
 
 typedef struct Slice {
+  const Allocator *allocator;
+  void *data;
   size_t max_cap;
   size_t write_head;
   size_t size_of_type;
-  void *data;
 } Slice;
 
 void slice_init(Slice *self, const Allocator *allocator,
                 const size_t size_of_type, const size_t max_capacity);
-void slice_grow(Slice *self, const Allocator *allocator, const size_t factor);
-void slice_add(Slice *self, const Allocator *allocator, const void *obj);
-void slice_free_data(Slice *self, const Allocator *allocator);
+void slice_grow(Slice *self, const size_t factor);
+void slice_add(Slice *self, const void *obj);
+void slice_free_data(Slice *self);
 void *slice_get(const Slice *self, const size_t idx);

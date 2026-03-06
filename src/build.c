@@ -115,7 +115,7 @@ static Error create_minctes_main_c(const FolderPath *output_folder_path) {
   }
 
 free_test_name_slice:
-  slice_free_data(&test_name_slice, &ALLOCATOR_STDLIB);
+  slice_free_data(&test_name_slice);
   return err;
 }
 
@@ -124,18 +124,18 @@ static Error append_to_build_cmd_slice(Slice *build_cmd_slice,
   if (build_cmd_slice->size_of_type != sizeof(char)) {
     return ERROR_INVALID_PARAM;
   }
-  slice_add(build_cmd_slice, &ALLOCATOR_STDLIB, " ");
+  slice_add(build_cmd_slice, " ");
   size_t len = strlen(str);
   char char_buffer;
   for (size_t i = 0; i < len; i++) {
     char_buffer = str[i];
-    slice_add(build_cmd_slice, &ALLOCATOR_STDLIB, &char_buffer);
+    slice_add(build_cmd_slice, &char_buffer);
   }
   return ERROR_NONE;
 }
 
 static Error run_build_command(Slice *command) {
-  slice_add(command, &ALLOCATOR_STDLIB, "");
+  slice_add(command, "");
   FILE *pipe = popen(command->data, "r");
   if (pipe == NULL) {
     return ERROR_COULD_NOT_OPEN_FILE;
@@ -214,7 +214,7 @@ static Error compile_build_runner(const Compiler c_compiler,
 close_discovered_tests_directory_file:
   fclose(discovered_tests_directory_file);
 free_cmd_slice:
-  slice_free_data(&build_cmd_slice, &ALLOCATOR_STDLIB);
+  slice_free_data(&build_cmd_slice);
   return err;
 }
 
