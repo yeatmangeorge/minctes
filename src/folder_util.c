@@ -52,6 +52,25 @@ Error file_path_init(FilePath *self, const FolderPath *folder_path,
   return ERROR_NONE;
 }
 
+Error file_path_init_from_string(FilePath *self, const char *path_string) {
+  Error err = ERROR_NONE;
+  char path_buffer[PATH_MAX] = {0};
+  strcpy(path_buffer, path_string);
+  char *start_of_filename_buffer = strrchr(path_buffer, '/');
+  if (start_of_filename_buffer == NULL) {
+    return ERROR_PATH_IS_NOT_FILE;
+  }
+  *start_of_filename_buffer = '\0';
+
+  FolderPath folder_path;
+  err = folder_path_init(&folder_path, path_buffer);
+  if (err != ERROR_NONE) {
+    return err;
+  }
+
+  return file_path_init(self, &folder_path, start_of_filename_buffer + 1);
+}
+
 void file_path_as_cstring(const FilePath *self, char *buffer) {
   snprintf(buffer, PATH_MAX + FILENAME_MAX, "%s/%s", self->folder_path.value,
            self->file_name);
