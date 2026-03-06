@@ -34,9 +34,37 @@ typedef struct Slice {
   size_t size_of_type;
 } Slice;
 
+/**
+ * Initialise the slice.
+ *
+ * size_of_type is the sizeof() the type held in the slice. Slice assumes that
+ * only one type of data is being stored in it.
+ *
+ * max_capacity refers to the initial size of the memory Slice uses to store
+ * it's data. This is grown automatically as required when slice_get is called,
+ * or manually when slice_grow is called.
+ */
 void slice_init(Slice *self, const Allocator *allocator,
                 const size_t size_of_type, const size_t max_capacity);
+/**
+ * Resizes the memory used by the slice, multiplied by the provided factor.
+ *
+ * factor must be above 2.
+ */
 void slice_grow(Slice *self, const size_t factor);
+/**
+ * Add an element to the slice.
+ *
+ * It is worth keeping in mind that memory may be reallocated as a result of
+ * this operation.
+ */
 void slice_add(Slice *self, const void *obj);
+/**
+ * Frees the data associated with the slice. Note that the Slice struct will not
+ * be freed, and you are expected to manage this yourself.
+ */
 void slice_free_data(Slice *self);
+/**
+ * Retrieve a pointer to an element in the slice.
+ */
 void *slice_get(const Slice *self, const size_t idx);
