@@ -42,9 +42,11 @@ This will generate a discovered_tests.g.h file.
 
 * Run
 ```BASH
-minctes build [c_compiler] [discovered_tests.h] [your_library.a] [output_folder]
+minctes build [c_compiler] [libyour_library.a] [output_folder]
 ```
 This will build a test_runner executable. 
+
+libyour_library.a is expected to be compiled in release mode. Provide a path to the .a file. It is expected that you copy all headers that you include in your .t.c files into the directory that libyour_library.a is found in.
 
 * Execute test_runner 
 

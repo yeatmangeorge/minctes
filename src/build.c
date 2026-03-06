@@ -150,7 +150,6 @@ static Error run_build_command(Slice *command) {
 static Error compile_build_runner(const Compiler c_compiler,
                                   const FilePath *library_file_path,
                                   const FolderPath *output_folder) {
-  (void)library_file_path;
   Error err = ERROR_NONE;
   Slice build_cmd_slice;
   slice_init(&build_cmd_slice, &ALLOCATOR_STDLIB, sizeof(char), 10);
@@ -193,6 +192,26 @@ static Error compile_build_runner(const Compiler c_compiler,
     }
   }
 
+  char library_file_path_buffer[PATH_MAX];
+  file_path_as_cstring(library_file_path, library_file_path_buffer);
+  err = append_to_build_cmd_slice(&build_cmd_slice, library_file_path_buffer);
+  if (err != ERROR_NONE) {
+    goto close_discovered_tests_directory_file;
+  }
+
+  err = append_to_build_cmd_slice(&build_cmd_slice, "-I");
+  if (err != ERROR_NONE) {
+    goto close_discovered_tests_directory_file;
+  }
+
+  char headers_folder_buffer[PATH_MAX];
+  folder_path_as_cstring(&library_file_path->folder_path,
+                         headers_folder_buffer);
+  err = append_to_build_cmd_slice(&build_cmd_slice, headers_folder_buffer);
+  if (err != ERROR_NONE) {
+    goto close_discovered_tests_directory_file;
+  }
+
   err = append_to_build_cmd_slice(&build_cmd_slice, "-o");
   if (err != ERROR_NONE) {
     goto close_discovered_tests_directory_file;
@@ -221,8 +240,6 @@ free_cmd_slice:
 Error minctes_build(const Compiler c_compiler,
                     const FilePath *library_file_path,
                     const FolderPath *output_folder) {
-  (void)c_compiler;
-  (void)library_file_path;
   Error err = ERROR_NONE;
   err = create_minctes_main_c(output_folder);
   if (err != ERROR_NONE) {

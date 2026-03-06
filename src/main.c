@@ -74,9 +74,12 @@ void run_build(const char *c_compiler_string,
     error_panic(ERROR_UNSUPPORTED_COMPILER, ERROR_CTX);
   }
 
-  // TODO init
   FilePath library_file_path;
-  (void)library_file_path_string;
+  error =
+      file_path_init_from_string(&library_file_path, library_file_path_string);
+  if (error != ERROR_NONE) {
+    error_panic(error, ERROR_CTX);
+  }
 
   FolderPath output_folder;
   error = folder_path_init(&output_folder, output_folder_string);

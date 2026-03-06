@@ -32,6 +32,7 @@ Error folder_path_files_in_folder(const FolderPath *self, Slice *file_paths);
 
 Error file_path_init(FilePath *self, const FolderPath *folder_path,
                      const char *file_name);
+Error file_path_init_from_string(FilePath *self, const char *path_string);
 /**
  * Buffer must be at least the size of PATH_MAX+FILENAME_MAX
  */
