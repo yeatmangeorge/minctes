@@ -60,7 +60,7 @@ static Error discover_includes_in_file(const Compiler compiler,
       err = ERROR_UNRESOLVED_PATH;
       goto close_pipe;
     }
-    slice_add(includes_slice, &ALLOCATOR_STDLIB, resolved);
+    slice_add(includes_slice, resolved);
   }
 
 close_pipe:
@@ -137,7 +137,7 @@ static Error find_test_files_in_folder(const FolderPath *source_folder,
       FilePath file_path;
       file_path_init(&file_path, source_folder, file_name_buffer);
       if (file_path_is_test_file(&file_path)) {
-        slice_add(file_path_slice, &ALLOCATOR_STDLIB, &file_path);
+        slice_add(file_path_slice, &file_path);
       }
     }
   }
@@ -252,9 +252,9 @@ Error minctes_discover(const Compiler compiler, const FolderPath *source_folder,
 close_output_file:
   fclose(output_file);
 free_discovery_slices:
-  slice_free_data(&includes_slice, &ALLOCATOR_STDLIB);
-  slice_free_data(&test_name_slice, &ALLOCATOR_STDLIB);
+  slice_free_data(&includes_slice);
+  slice_free_data(&test_name_slice);
 free_test_file_path_slice:
-  slice_free_data(&test_file_path_slice, &ALLOCATOR_STDLIB);
+  slice_free_data(&test_file_path_slice);
   return err;
 }

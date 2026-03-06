@@ -63,7 +63,7 @@ void minctes_util_tests_in_file(FILE *file, Slice *test_name_slice,
         }
         trimmed_name[i - prefix_length] = word[i];
       }
-      slice_add(test_name_slice, &ALLOCATOR_STDLIB, trimmed_name);
+      slice_add(test_name_slice, trimmed_name);
     }
   }
 }
