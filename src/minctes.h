@@ -16,6 +16,7 @@
 
 typedef enum MinctesRunnerError {
   MINCTES_RUNNER_ERROR_TOO_MANY_TESTS,
+  MINCTES_RUNNER_ERROR_OUT_OF_MEMORY,
 } MinctesRunnerError;
 
 typedef struct MinctesRunner _MinctesRunner;
@@ -69,8 +70,7 @@ static inline void minctes_runner_init(MinctesRunner *self) {
 #define MINCTES_ASSERT(CONDITION)                                              \
   do {                                                                         \
     if (!(CONDITION)) {                                                        \
-      fprintf(stderr,                                                          \
-              "Assertion failed --- Test %s - Line: %d - File - %s\n\n",       \
+      fprintf(stderr, "Assertion failed\nTest: %s\nLine: %d\nFile%s\n\n",      \
               __func__, __LINE__, __FILE__);                                   \
       minctes_runner->failed_tests[minctes_runner->current_test] = true;       \
       return;                                                                  \
@@ -87,9 +87,8 @@ static inline void minctes_runner_init(MinctesRunner *self) {
   do {                                                                         \
     if ((ACTUAL) != (EXPECTED)) {                                              \
       fprintf(stderr,                                                          \
-              "Equality check failed. Expected" #STRING_FORMAT                 \
-              ", but got " #STRING_FORMAT                                      \
-              "--- Test %s - Line: %d - File - %s\n\n",                        \
+              "Equality check failed\nExpected " #STRING_FORMAT                \
+              ", but got " #STRING_FORMAT "\nTest: %s\nLine: %d\nFile %s\n\n", \
               EXPECTED, ACTUAL, __func__, __LINE__, __FILE__);                 \
       minctes_runner->failed_tests[minctes_runner->current_test] = true;       \
       return;                                                                  \
