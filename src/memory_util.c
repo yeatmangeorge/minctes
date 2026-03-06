@@ -48,7 +48,7 @@ void slice_grow(Slice *self, const size_t factor) {
   size_t old_size = SLICE_DATA_SIZE_T(self);
   self->max_cap *= factor;
   self->data =
-      self->allocator->remalloc(self, old_size, SLICE_DATA_SIZE_T(self));
+      self->allocator->remalloc(self->data, old_size, SLICE_DATA_SIZE_T(self));
 }
 
 void slice_add(Slice *self, const void *obj) {
@@ -68,7 +68,7 @@ void slice_add(Slice *self, const void *obj) {
 void slice_free_data(Slice *self) { self->allocator->free(self->data); }
 
 void *slice_get(const Slice *self, const size_t idx) {
-  if (idx > self->write_head) {
+  if (idx >= self->write_head) {
     error_panic(ERROR_INVALID_PARAM, ERROR_CTX);
   }
 
