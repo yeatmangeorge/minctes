@@ -2,16 +2,22 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
-#include "error.h"
 
 #define MACRO_NAME_CONCAT_INNER(A, B) A##B
 #define MACRO_NAME_CONCAT(A, B) MACRO_NAME_CONCAT_INNER(A, B)
 
 #define MAX_TESTS 2000
 #define MAX_TEST_NAME_LENGTH 256
-const char minctes_registration_macro_prefix[] = "MINCTES(";
+#define MINCTES_REGISTRATION_MACRO_PREFIX "MINCTES("
+// TODO temporary, remove
+#define MINCTES_REGISTRATION_MACRO_PROCESSED_PREFIX "minctes_register_"
+
+typedef enum MinctesRunnerError {
+  MINCTES_RUNNER_ERROR_TOO_MANY_TESTS,
+  MINCTES_RUNNER_ERROR_OUT_OF_MEMORY,
+} MinctesRunnerError;
 
 typedef struct MinctesRunner _MinctesRunner;
 typedef void (*test_function)(_MinctesRunner *minctes_runner);
@@ -45,13 +51,15 @@ static inline void minctes_runner_init(MinctesRunner *self) {
  */
 #define MINCTES(TEST_NAME)                                                     \
   void TEST_NAME(MinctesRunner *minctes_runner);                               \
-  static void MACRO_NAME_CONCAT(MINCTES_REGISTRATION_FUNC_PREFIX,              \
-                                TEST_NAME)(MinctesRunner * mr) {               \
+  void minctes_register_##TEST_NAME(MinctesRunner *mr) {                       \
     mr->test_names[mr->test_count] = #TEST_NAME;                               \
     mr->test_functions[mr->test_count] = &TEST_NAME;                           \
     mr->test_count++;                                                          \
-    if (mr->test_count == MAX_TESTS)                                           \
-      error_panic(ERROR_TOO_MANY_TESTS, ERROR_CTX);                            \
+    if (mr->test_count == MAX_TESTS) {                                         \
+      fprintf(stderr, "Too many tests");                                       \
+      exit(MINCTES_RUNNER_ERROR_TOO_MANY_TESTS);                               \
+    }                                                                          \
+    TEST_NAME(mr);                                                             \
   }                                                                            \
   void TEST_NAME(MinctesRunner *minctes_runner)
 
@@ -62,7 +70,7 @@ static inline void minctes_runner_init(MinctesRunner *self) {
 #define MINCTES_ASSERT(CONDITION)                                              \
   do {                                                                         \
     if (!(CONDITION)) {                                                        \
-      fprintf(stderr, "Assertion failed --- Test %s - Line: %d - File - %s\n", \
+      fprintf(stderr, "Assertion failed\nTest: %s\nLine: %d\nFile%s\n\n",      \
               __func__, __LINE__, __FILE__);                                   \
       minctes_runner->failed_tests[minctes_runner->current_test] = true;       \
       return;                                                                  \
@@ -79,9 +87,8 @@ static inline void minctes_runner_init(MinctesRunner *self) {
   do {                                                                         \
     if ((ACTUAL) != (EXPECTED)) {                                              \
       fprintf(stderr,                                                          \
-              "Equality check failed. Expected" #STRING_FORMAT                 \
-              ", but got " #STRING_FORMAT                                      \
-              "--- Test %s - Line: %d - File - %s\n",                          \
+              "Equality check failed\nExpected " #STRING_FORMAT                \
+              ", but got " #STRING_FORMAT "\nTest: %s\nLine: %d\nFile %s\n\n", \
               EXPECTED, ACTUAL, __func__, __LINE__, __FILE__);                 \
       minctes_runner->failed_tests[minctes_runner->current_test] = true;       \
       return;                                                                  \

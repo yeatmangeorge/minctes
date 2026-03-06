@@ -1,22 +1,106 @@
 #include "discover.h"
 
-#include <dirent.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/dirent.h>
-#include <sys/syslimits.h>
-
+#include "compiler.h"
 #include "error.h"
 #include "folder_util.h"
 #include "memory_util.h"
 #include "minctes.h"
+#include "minctes_util.h"
+#include <_stdlib.h>
+#include <dirent.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/dirent.h>
+#include <sys/syslimits.h>
 
 #define TEST_FILE_EXTENSION ".t.c"
-#define OUTPUT_FILE_NAME "discovered_tests.g.h"
+#define HEADER_EXTENSION ".h"
+
+static Error discover_includes_in_file(const Compiler compiler,
+                                       FilePath *file_path,
+                                       Slice *includes_slice) {
+  if (includes_slice->size_of_type != sizeof(char) * PATH_MAX) {
+    return ERROR_INVALID_PARAM;
+  }
+
+  char file_path_buffer[PATH_MAX];
+  file_path_as_cstring(file_path, file_path_buffer);
+
+  char command_buffer[sizeof(compiler_include_commands[compiler]) + PATH_MAX];
+// TODO not ideal, but fine for now
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+  snprintf(command_buffer, sizeof(command_buffer),
+           compiler_include_commands[compiler], file_path_buffer);
+#pragma clang diagnostic pop
+
+  FILE *pipe = popen(command_buffer, "r");
+  if (pipe == NULL) {
+    return ERROR_COULD_NOT_OPEN_FILE;
+  }
+
+  Error err = ERROR_NONE;
+  char word_buffer[PATH_MAX];
+  while (fscanf(pipe, "%s", word_buffer) == true) {
+    /*This block of code has several objectives. First it removes line breaks in
+     * output. Next, it filters out .x and .c files. It also removes main.o and
+     * main.c at the start of the output*/
+    const size_t header_extension_length = strlen(HEADER_EXTENSION);
+    size_t word_length = strlen(word_buffer);
+    if (word_length < header_extension_length ||
+        strcmp(&word_buffer[word_length - header_extension_length],
+               HEADER_EXTENSION) != 0) {
+      continue;
+    }
+
+    char resolved[PATH_MAX];
+    if (realpath(word_buffer, resolved) == NULL) {
+      err = ERROR_UNRESOLVED_PATH;
+      goto close_pipe;
+    }
+    slice_add(includes_slice, &ALLOCATOR_STDLIB, resolved);
+  }
+
+close_pipe:
+  pclose(pipe);
+  return err;
+}
+
+static Error
+write_test_file_paths_to_directory(const FolderPath *output_folder_path,
+                                   const Slice *test_file_path_slice) {
+  Error err = ERROR_NONE;
+  if (test_file_path_slice->size_of_type != sizeof(FilePath)) {
+    return ERROR_INVALID_PARAM;
+  }
+
+  FilePath directory_file_path;
+  file_path_init(&directory_file_path, output_folder_path,
+                 DISCOVERED_TESTS_DIRECTORY_FILE_NAME);
+  FILE *directory_file = file_path_fopen(&directory_file_path, "w");
+
+  for (size_t i = 0; i < test_file_path_slice->write_head; i++) {
+    FilePath *test_file_path = (FilePath *)slice_get(test_file_path_slice, i);
+    const char test_file_name_buffer[PATH_MAX];
+    const char resolved_path_buffer[PATH_MAX];
+    file_path_as_cstring(test_file_path, (char *)test_file_name_buffer);
+    realpath(test_file_name_buffer, (char *)resolved_path_buffer);
+
+    if (fprintf(directory_file, "%s\n", resolved_path_buffer) < 0) {
+      err = ERROR_COULD_NOT_WRITE_TO_FILE;
+      goto close_directory_file;
+    }
+  }
+
+close_directory_file:
+  fclose(directory_file);
+  return err;
+}
 
 static bool file_path_is_test_file(const FilePath *self) {
-  char buffer[PATH_MAX + FILENAME_MAX] = {0};
+  char buffer[PATH_MAX] = {0};
   file_path_as_cstring(self, buffer);
 
   size_t len = strlen(buffer);
@@ -51,7 +135,7 @@ static Error find_test_files_in_folder(const FolderPath *source_folder,
       memcpy(file_name_buffer, directory_entry_buffer->d_name,
              directory_entry_buffer->d_namlen);
       FilePath file_path;
-      file_path_init(&file_path, *source_folder, file_name_buffer);
+      file_path_init(&file_path, source_folder, file_name_buffer);
       if (file_path_is_test_file(&file_path)) {
         slice_add(file_path_slice, &ALLOCATOR_STDLIB, &file_path);
       }
@@ -62,40 +146,29 @@ static Error find_test_files_in_folder(const FolderPath *source_folder,
   return err;
 }
 
-static void discover_tests_in_file(FILE *file, Slice *test_name_slice) {
-  /*TODO: This could cause issues if someone puts the prefix in the middle of a
-   * function name or comments. Also, in the future, it would be better to get
-   * the c preprocessor to expand the test delaration, and then detect the
-   * registration function name from the intermediate file. This would reduce
-   * name collisions,as the expanded prefix could be more unique*/
-  static const char prefix_length = strlen(minctes_registration_macro_prefix);
-  char word[MAX_TEST_NAME_LENGTH];
-  rewind(file);
-  while (fscanf(file, "%s", word) == true) {
-    if (strstr(word, minctes_registration_macro_prefix)) {
-      char trimmed_name[MAX_TEST_NAME_LENGTH] = {0};
-      size_t len = strlen(word);
-      for (size_t i = 0; i < len; i++) {
-        if (i < prefix_length) {
-          continue;
-        }
-        if (word[i] == ')') {
-          break;
-        }
-        trimmed_name[i - prefix_length] = word[i];
-      }
-      slice_add(test_name_slice, &ALLOCATOR_STDLIB, trimmed_name);
-    }
+static Error add_header_to_output_file(FILE *output_file,
+                                       Slice *includes_slice) {
+  if (includes_slice->size_of_type != sizeof(char) * PATH_MAX) {
+    return ERROR_INVALID_PARAM;
   }
-}
-
-static Error add_header_to_output_file(FILE *output_file) {
+  rewind(output_file);
   if (fprintf(output_file,
               "/*--- FILE GENERATED BY MINCTES. DO NOT MODIFY. ---*/\n"
-              "#pragma once\n\n"
-              "#include \"minctes.h\"\n\n") < 0) {
+              "#pragma once\n\n") < 0) {
     return ERROR_COULD_NOT_WRITE_TO_FILE;
   };
+
+  for (size_t i = 0; i < includes_slice->write_head; i++) {
+    if (fprintf(output_file, "#include \"%s\"\n",
+                (char *)slice_get(includes_slice, i)) < 0) {
+      return ERROR_COULD_NOT_WRITE_TO_FILE;
+    }
+  }
+
+  if (fprintf(output_file, "\n") < 0) {
+    return ERROR_COULD_NOT_WRITE_TO_FILE;
+  }
+
   return ERROR_NONE;
 }
 
@@ -105,13 +178,6 @@ static Error add_main_func_to_output_file(FILE *output_file,
   if (test_name_slice->size_of_type != sizeof(char) * MAX_TEST_NAME_LENGTH) {
     return ERROR_INVALID_PARAM;
   }
-
-  // TODO this should not be as hardcoded
-  // if (fprintf(output_file, "int main(){\n"
-  //                          "\tMinctesRunner mr;\n"
-  //                          "\tminctes_runner_init(&mr);\n") < 0) {
-  //   return ERROR_COULD_NOT_WRITE_TO_FILE;
-  // }
 
   char buffer[MAX_TEST_NAME_LENGTH] = {0};
   for (size_t i = 0; i < test_name_slice->write_head; i++) {
@@ -124,15 +190,11 @@ static Error add_main_func_to_output_file(FILE *output_file,
     };
   }
 
-  // if (fprintf(output_file, "}\n") < 0) {
-  //   return ERROR_COULD_NOT_WRITE_TO_FILE;
-  // }
   return err;
 }
 
-Error minctes_discover(const FolderPath *source_folder,
+Error minctes_discover(const Compiler compiler, const FolderPath *source_folder,
                        const FolderPath *output_folder) {
-  (void)output_folder;
   Error err = ERROR_NONE;
 
   Slice test_file_path_slice;
@@ -145,36 +207,39 @@ Error minctes_discover(const FolderPath *source_folder,
   Slice test_name_slice;
   slice_init(&test_name_slice, &ALLOCATOR_STDLIB,
              MAX_TEST_NAME_LENGTH * sizeof(char), 1);
+  Slice includes_slice;
+  slice_init(&includes_slice, &ALLOCATOR_STDLIB, PATH_MAX * sizeof(char), 1);
+
+  FilePath *file_paths = test_file_path_slice.data;
+  err =
+      write_test_file_paths_to_directory(output_folder, &test_file_path_slice);
+  if (err != ERROR_NONE) {
+    goto free_test_file_path_slice;
+  }
 
   for (size_t i = 0; i < test_file_path_slice.write_head; i++) {
-    FilePath *file_paths = test_file_path_slice.data;
-    char file_path_buffer[PATH_MAX + FILENAME_MAX] = {0};
-    file_path_as_cstring(&file_paths[i], file_path_buffer);
-
-    FILE *file = fopen(file_path_buffer, "r");
+    FILE *file = file_path_fopen(&file_paths[i], "r");
     if (file == NULL) {
       err = ERROR_COULD_NOT_OPEN_FILE;
-      goto free_test_name_slice;
+      goto free_discovery_slices;
     }
 
-    // TODO
-    //  discover_includes_in_file(file, &)
-    discover_tests_in_file(file, &test_name_slice);
+    discover_includes_in_file(compiler, &file_paths[i], &includes_slice);
+    minctes_util_tests_in_file(file, &test_name_slice,
+                               TEST_IN_FILE_PREFIX_TYPE_UNPROCESSED);
     fclose(file);
   }
 
-  char output_file_path_buffer[PATH_MAX] = {0};
-  folder_path_as_cstring(output_folder, output_file_path_buffer);
-  size_t len = strlen(output_file_path_buffer);
-  snprintf(output_file_path_buffer + len, sizeof(output_file_path_buffer) - len,
-           "/%s", OUTPUT_FILE_NAME);
-  FILE *output_file = fopen(output_file_path_buffer, "w");
+  FilePath output_file_path;
+  file_path_init(&output_file_path, output_folder,
+                 DISCOVERED_TESTS_HEADER_FILE_NAME);
+  FILE *output_file = file_path_fopen(&output_file_path, "w");
   if (output_file == NULL) {
     err = ERROR_COULD_NOT_OPEN_FILE;
-    goto free_test_name_slice;
+    goto free_discovery_slices;
   }
 
-  err = add_header_to_output_file(output_file);
+  err = add_header_to_output_file(output_file, &includes_slice);
   if (err != ERROR_NONE) {
     goto close_output_file;
   }
@@ -186,7 +251,8 @@ Error minctes_discover(const FolderPath *source_folder,
 
 close_output_file:
   fclose(output_file);
-free_test_name_slice:
+free_discovery_slices:
+  slice_free_data(&includes_slice, &ALLOCATOR_STDLIB);
   slice_free_data(&test_name_slice, &ALLOCATOR_STDLIB);
 free_test_file_path_slice:
   slice_free_data(&test_file_path_slice, &ALLOCATOR_STDLIB);
