@@ -50,7 +50,7 @@ static inline void minctes_runner_init(MinctesRunner *self) {
  * in.
  */
 #define MINCTES(TEST_NAME)                                                     \
-  void TEST_NAME(MinctesRunner *minctes_runner);                               \
+  static void TEST_NAME(MinctesRunner *minctes_runner);                        \
   void minctes_register_##TEST_NAME(MinctesRunner *mr) {                       \
     mr->test_names[mr->test_count] = #TEST_NAME;                               \
     mr->test_functions[mr->test_count] = &TEST_NAME;                           \
@@ -61,7 +61,7 @@ static inline void minctes_runner_init(MinctesRunner *self) {
     }                                                                          \
     TEST_NAME(mr);                                                             \
   }                                                                            \
-  void TEST_NAME(MinctesRunner *minctes_runner)
+  static void TEST_NAME(MinctesRunner *minctes_runner)
 
 /**
  * Standard assert func. Immediately fails and returns from test func if the
