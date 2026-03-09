@@ -8,15 +8,15 @@
  */
 #define MIN_AMOUNT_OF_ARGS_FOR_FLAGS 3
 
-char *arg_parser_get_flag(const size_t argc, const char *argv[],
-                          const char *flag) {
+const char *arg_parser_get_flag(const size_t argc, const char *argv[],
+                                const char *flag, const char *default_result) {
   if (argc < MIN_AMOUNT_OF_ARGS_FOR_FLAGS) {
-    return NULL;
+    return default_result;
   }
   for (size_t i = 0; i < argc - 1; i++) {
     if (strcmp(argv[i], flag) == 0) {
       return (char *)argv[i + 1];
     }
   }
-  return NULL;
+  return default_result;
 }
