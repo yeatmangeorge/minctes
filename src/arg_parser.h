@@ -8,5 +8,5 @@
  *
  * Returns default_result if the flag does not exist.
  */
-const char *arg_parser_get_flag(const size_t argc, const char *argv[],
-                                const char *flag, const char *default_result);
+const char *arg_parser_get_flag(const int argc, char *argv[], const char *flag,
+                                const char *default_result);

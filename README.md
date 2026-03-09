@@ -36,7 +36,7 @@ MINCTES_EQUALS([actual],[expected],[string_format])
 ## Pipeline
 * Run 
 ```BASH
-minctes discover [c_compiler] [src_folder] [output_folder]
+minctes discover -c [c_compiler] -s [src_folder] -o [output_folder]
 ```
 This will generate a discovered_tests.g.h file.
 
@@ -44,7 +44,7 @@ This will generate a discovered_tests.g.h file.
 
 * Run
 ```BASH
-minctes build [c_compiler] [libyour_library.a] [output_folder]
+minctes build -c [c_compiler] -l [libyour_library.a] -o [output_folder]
 ```
 This will build a test_runner executable. 
 
