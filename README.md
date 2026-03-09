@@ -7,6 +7,8 @@ Minctes is a minimal testing framework for C99+. Mostly created for educational 
 * Automatic test discovery
 * File name convention and macro based test declaration - tests remain close to their code
 * Design ensures that only public APIs are tested
+* Design means that your source and test code are compiled seperately - can speed up iteration
+* Set Up and Tear Down functionality
 
 ## Creating tests
 ### Registering a test
@@ -33,7 +35,13 @@ MINCTES_ASSERT([condition])
 MINCTES_EQUALS([actual],[expected],[string_format])
 ```
 
-## Pipeline
+## Running Tests
+### Getting Started
+The simplest way to run Minctes tests is via the following command:
+```BASH
+minctes run -s [src_folder] -l [libyour_library.a]
+```
+### Pipeline
 * Run 
 ```BASH
 minctes discover -c [c_compiler] -s [src_folder] -o [output_folder]
