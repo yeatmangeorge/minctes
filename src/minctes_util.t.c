@@ -6,8 +6,11 @@
 #include <stdio.h>
 #include <string.h>
 
-MINCTES(can_detect_tests_in_file) {
-  Slice test_name_slice;
+static Slice test_name_slice;
+
+static void teardown() { slice_free_data(&test_name_slice); }
+
+MINCTES(can_detect_tests_in_file, minctes_no_setup(), teardown()) {
   slice_init(&test_name_slice, &ALLOCATOR_STDLIB,
              sizeof(char) * MAX_TEST_NAME_LENGTH, 1);
   FILE *file = fopen(__FILE__, "r");
