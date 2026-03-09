@@ -33,7 +33,7 @@ void minctes_util_tests_in_file(FILE *file, Slice *test_name_slice,
   char terminator;
   switch (prefix_type) {
   case TEST_IN_FILE_PREFIX_TYPE_UNPROCESSED: {
-    terminator = ')';
+    terminator = ',';
     break;
   }
   case TEST_IN_FILE_PREFIX_TYPE_PROCESSED: {

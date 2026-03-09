@@ -42,6 +42,15 @@ static inline void minctes_runner_init(MinctesRunner *self) {
 }
 
 /**
+ * Used as a placeholder for when a test function does not require setup
+ */
+static inline void minctes_no_setup(void) {}
+/**
+ * Used as a placeholder for when a test function does not require teardown
+ */
+static inline void minctes_no_teardown(void) {}
+
+/**
  * Macro used to define Minctes tests.
  *
  * As Minctes does not have a set-up or tear-down step, you should only access
@@ -49,7 +58,7 @@ static inline void minctes_runner_init(MinctesRunner *self) {
  * scope. Tests should be deterministec, regardless of the order they are run
  * in.
  */
-#define MINCTES(TEST_NAME)                                                     \
+#define MINCTES(TEST_NAME, SET_UP, TEAR_DOWN)                                  \
   static void TEST_NAME(MinctesRunner *minctes_runner);                        \
   void minctes_register_##TEST_NAME(MinctesRunner *mr) {                       \
     mr->test_names[mr->test_count] = #TEST_NAME;                               \
@@ -59,7 +68,9 @@ static inline void minctes_runner_init(MinctesRunner *self) {
       fprintf(stderr, "Too many tests");                                       \
       exit(MINCTES_RUNNER_ERROR_TOO_MANY_TESTS);                               \
     }                                                                          \
+    SET_UP;                                                                    \
     TEST_NAME(mr);                                                             \
+    TEAR_DOWN;                                                                 \
   }                                                                            \
   static void TEST_NAME(MinctesRunner *minctes_runner)
 
