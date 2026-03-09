@@ -18,10 +18,12 @@ Files with this naming scheme will be discovered for tests.
 
 Within this file, define test functions using the following macro:
 ```C
-MINCTES([test_name]){
+MINCTES([test_name], minctes_no_setup(), minctes_no_teardown()){
     //Test logic
 }
 ```
+
+minctes_no_setup() and minctes_no_teardown(), can be replaced with any functions to provide setup and teardown functionality. For example, this is especially useful when working with malloced memory and files. Without freeing memory and closing files, you could memory leak and eventually crash the test runner.
 ### Test Helpers
 Provided are the following macros to aid in writing tests. Using these allows you to fail tests while continuing to process further tests.
 ```C
