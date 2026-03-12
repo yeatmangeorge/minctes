@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <sys/syslimits.h>
+#include <unistd.h>
 
 #include "arg_parser.h"
 #include "build.h"
@@ -103,9 +105,33 @@ void run_build(const char *c_compiler_string,
   }
 }
 
-// void run_run(const char *c_compiler_string, const char *library_path_string,
-//              const char *src_folder_string, const char *output_folder_string)
-//              {}
+void run_run(const char *c_compiler_string,
+             const char *library_file_path_string,
+             const char *source_folder_string,
+             const char *output_folder_string) {
+  run_discover(c_compiler_string, source_folder_string, output_folder_string);
+  run_build(c_compiler_string, library_file_path_string, output_folder_string);
+
+  Error error;
+
+  FolderPath output_folder_path;
+  error = folder_path_init(&output_folder_path, output_folder_string);
+  if (error != ERROR_NONE) {
+    error_panic(error, ERROR_CTX);
+  }
+
+  FilePath build_runner_file_path;
+  error = file_path_init(&build_runner_file_path, &output_folder_path,
+                         MINCTES_TEST_RUNNER_FILE_NAME);
+  if (error != ERROR_NONE) {
+    error_panic(error, ERROR_CTX);
+  }
+  char build_runner_file_path_buffer[PATH_MAX] = {0};
+  file_path_as_cstring(&build_runner_file_path, build_runner_file_path_buffer);
+
+  char *build_runner_args[] = {NULL};
+  execvp(build_runner_file_path_buffer, build_runner_args);
+}
 
 #define MIN_ARGC 2
 #define PROGRAM_ARG 1
@@ -126,7 +152,7 @@ int main(int argc, char *argv[]) {
       argc, argv, SOURCE_FOLDER_FLAG, SOURCE_FOLDER_DEFAULT);
   const char *output_folder_arg = arg_parser_get_flag(
       argc, argv, OUTPUT_FOLDER_FLAG, OUTPUT_FOLDER_DEFAULT);
-  const char *library_file_path =
+  const char *library_file_path_arg =
       arg_parser_get_flag(argc, argv, LIBRARY_FILE_FLAG, LIBRARY_FILE_DEFAULT);
 
   switch (selected_program) {
@@ -138,11 +164,12 @@ int main(int argc, char *argv[]) {
     break;
   }
   case PROGRAM_BUILD: {
-    run_build(c_compiler_arg, library_file_path, output_folder_arg);
+    run_build(c_compiler_arg, library_file_path_arg, output_folder_arg);
     break;
   }
   case PROGRAM_RUN: {
-    // TODO
+    run_run(c_compiler_arg, library_file_path_arg, source_folder_arg,
+            output_folder_arg);
     break;
   }
   case PROGRAM_NONE:
