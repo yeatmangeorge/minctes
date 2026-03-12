@@ -17,12 +17,23 @@ static bool path_is_folder(const char *path) {
   return S_ISDIR(info.st_mode);
 }
 
-Error folder_path_init(FolderPath *self, const char *path_string) {
-  if (!path_is_folder(path_string)) {
-    return ERROR_PATH_IS_NOT_FOLDER;
-  }
+Error folder_path_init(FolderPath *self, const char *path_string,
+                       const FolderPathInitMode mode) {
   memset(self->value, 0, PATH_MAX);
   strcpy(self->value, path_string);
+  if (!path_is_folder(path_string)) {
+    switch (mode) {
+    case FOLDER_PATH_INIT_ERROR_IF_NON_EXISTENT: {
+      return ERROR_PATH_IS_NOT_FOLDER;
+    }
+    case FOLDER_PATH_INIT_CREATE_IF_NON_EXISTENT: {
+      if (mkdir(path_string, 0755) != 0) {
+        return ERROR_COULD_NOT_CREATE_DIRECTORY;
+      }
+      break;
+    }
+    }
+  }
   return ERROR_NONE;
 }
 
@@ -63,7 +74,8 @@ Error file_path_init_from_string(FilePath *self, const char *path_string) {
   *start_of_filename_buffer = '\0';
 
   FolderPath folder_path;
-  err = folder_path_init(&folder_path, path_buffer);
+  err = folder_path_init(&folder_path, path_buffer,
+                         FOLDER_PATH_INIT_ERROR_IF_NON_EXISTENT);
   if (err != ERROR_NONE) {
     return err;
   }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <sys/syslimits.h>
 
@@ -23,7 +24,13 @@ typedef struct FilePath {
   char file_name[FILENAME_MAX];
 } FilePath;
 
-Error folder_path_init(FolderPath *self, const char *path_string);
+typedef enum FolderPathInitMode {
+  FOLDER_PATH_INIT_ERROR_IF_NON_EXISTENT,
+  FOLDER_PATH_INIT_CREATE_IF_NON_EXISTENT
+} FolderPathInitMode;
+
+Error folder_path_init(FolderPath *self, const char *path_string,
+                       const FolderPathInitMode mode);
 /**
  * Buffer must be at least the size of PATH_MAX
  */
