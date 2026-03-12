@@ -12,7 +12,6 @@
 #include <sys/syslimits.h>
 
 #define MINCTES_MAIN_C_FILE_NAME "minctes_main.g.c"
-#define MINCTES_TEST_RUNNER_FILE_NAME "test_runner"
 
 static Error
 discover_tests_in_discover_output(const FolderPath *output_folder_path,
