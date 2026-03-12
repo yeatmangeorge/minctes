@@ -60,12 +60,12 @@ void run_discover(const char *compiler_string, const char *source_folder_string,
     error_panic(ERROR_UNSUPPORTED_COMPILER, ERROR_CTX);
   }
 
-  error = folder_path_init(&source_folder, source_folder_string);
+  error = folder_path_init(&source_folder, source_folder_string, false);
   if (error != ERROR_NONE) {
     error_panic(error, ERROR_CTX);
   };
 
-  error = folder_path_init(&output_folder, output_folder_string);
+  error = folder_path_init(&output_folder, output_folder_string, true);
   if (error != ERROR_NONE) {
     error_panic(error, ERROR_CTX);
   }
@@ -94,7 +94,7 @@ void run_build(const char *c_compiler_string,
   }
 
   FolderPath output_folder;
-  error = folder_path_init(&output_folder, output_folder_string);
+  error = folder_path_init(&output_folder, output_folder_string, true);
   if (error != ERROR_NONE) {
     error_panic(error, ERROR_CTX);
   }
@@ -115,7 +115,7 @@ void run_run(const char *c_compiler_string,
   Error error;
 
   FolderPath output_folder_path;
-  error = folder_path_init(&output_folder_path, output_folder_string);
+  error = folder_path_init(&output_folder_path, output_folder_string, true);
   if (error != ERROR_NONE) {
     error_panic(error, ERROR_CTX);
   }
