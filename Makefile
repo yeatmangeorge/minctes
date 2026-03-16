@@ -70,5 +70,11 @@ fmt:
 	clang-format -i $(shell find $(SRC_DIR) -name '*.[ch]')
 clean:
 	rm -rf build
+	
 rebuild: clean all
-.PHONY: all release debug build lib clean rebuild fmt
+
+test: all lib
+	$(BUILD_DIR)/$(TARGET) run -l $(LIB_BUILD_DIR)/$(LIB_TARGET)
+	
+	
+.PHONY: all release debug build lib clean rebuild fmt test
