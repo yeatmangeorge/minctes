@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/syslimits.h>
 
 #define MINCTES_MAIN_C_FILE_NAME "minctes_main.g.c"
 

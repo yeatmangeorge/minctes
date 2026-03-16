@@ -6,14 +6,14 @@
 #include "memory_util.h"
 #include "minctes.h"
 #include "minctes_util.h"
+#include "platform_def.h"
+
 #include <_stdlib.h>
 #include <dirent.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/dirent.h>
-#include <sys/syslimits.h>
 
 #define TEST_FILE_EXTENSION ".t.c"
 #define HEADER_EXTENSION ".h"
