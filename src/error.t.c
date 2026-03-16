@@ -1,6 +1,5 @@
 #include "error.h"
 #include "minctes.h"
-#include <sys/wait.h>
 #include <unistd.h>
 
 static void run_error_panic_test(MinctesRunner *minctes_runner, Error input,

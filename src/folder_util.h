@@ -2,10 +2,10 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include <sys/syslimits.h>
 
 #include "error.h"
 #include "memory_util.h"
+#include "platform_def.h"
 
 /*
  * A verified FolderPath. Ensures that the path is valid and existed at time of

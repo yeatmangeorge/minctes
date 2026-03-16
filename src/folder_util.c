@@ -3,9 +3,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/syslimits.h>
 
+#include "platform_def.h"
 #include "error.h"
 #include "folder_util.h"
 
