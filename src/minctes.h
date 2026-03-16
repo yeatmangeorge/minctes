@@ -14,6 +14,11 @@
 // TODO temporary, remove
 #define MINCTES_REGISTRATION_MACRO_PROCESSED_PREFIX "minctes_register_"
 
+#define RED_TEXT "\033[31m"
+#define YELLOW_TEXT "\033[33m"
+#define GREEN_TEXT "\033[32m"
+#define RESET_TEXT "\033[0m"
+
 typedef enum MinctesRunnerError {
   MINCTES_RUNNER_ERROR_TOO_MANY_TESTS,
   MINCTES_RUNNER_ERROR_OUT_OF_MEMORY,
@@ -26,7 +31,6 @@ typedef struct MinctesRunner {
   char *test_names[MAX_TESTS];
   bool failed_tests[MAX_TESTS];
   test_function test_functions[MAX_TESTS];
-  int test_count;
   int current_test;
 } MinctesRunner;
 
@@ -37,7 +41,6 @@ static inline void minctes_runner_init(MinctesRunner *self) {
   memset(self->test_names, 0, sizeof(self->test_names));
   memset(self->failed_tests, 0, sizeof(self->failed_tests));
   memset(self->test_functions, 0, sizeof(self->test_functions));
-  self->test_count = 0;
   self->current_test = 0;
 }
 
@@ -61,16 +64,28 @@ static inline void minctes_no_teardown(void) {}
 #define MINCTES(TEST_NAME, SET_UP, TEAR_DOWN)                                  \
   static void TEST_NAME(MinctesRunner *minctes_runner);                        \
   void minctes_register_##TEST_NAME(MinctesRunner *mr) {                       \
-    mr->test_names[mr->test_count] = #TEST_NAME;                               \
-    mr->test_functions[mr->test_count] = &TEST_NAME;                           \
-    mr->test_count++;                                                          \
-    if (mr->test_count == MAX_TESTS) {                                         \
-      fprintf(stderr, "Too many tests");                                       \
+    mr->test_names[mr->current_test] = #TEST_NAME;                             \
+    mr->test_functions[mr->current_test] = &TEST_NAME;                         \
+    mr->current_test++;                                                        \
+    if (mr->current_test == MAX_TESTS) {                                       \
+      fprintf(stderr, "Too many tests\n");                                     \
       exit(MINCTES_RUNNER_ERROR_TOO_MANY_TESTS);                               \
     }                                                                          \
-    SET_UP;                                                                    \
+    fprintf(stderr, "%d: " YELLOW_TEXT "%s " RESET_TEXT "running...\n",        \
+            mr->current_test, #TEST_NAME);                                     \
+    {                                                                          \
+      SET_UP;                                                                  \
+    }                                                                          \
     TEST_NAME(mr);                                                             \
-    TEAR_DOWN;                                                                 \
+    {                                                                          \
+      TEAR_DOWN;                                                               \
+    }                                                                          \
+    if (mr->failed_tests[mr->current_test]) {                                  \
+      fprintf(stderr, RED_TEXT "Failed test" RESET_TEXT "\n\n");               \
+    } else {                                                                   \
+      fprintf(stdout, GREEN_TEXT "Passed test" RESET_TEXT "\n\n");             \
+    }                                                                          \
+    fflush(NULL);                                                              \
   }                                                                            \
   static void TEST_NAME(MinctesRunner *minctes_runner)
 
