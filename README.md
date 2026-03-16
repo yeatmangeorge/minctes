@@ -1,11 +1,11 @@
 # Minctes (Minimal C Testing)
 
 ## About
-Minctes is a minimal testing framework for C99+. Mostly created for educational purposes.
+Minctes is a minimal testing framework for C99+. Minctes' primary goal is to encourage developers to write more tests by moving tests closer to their source folders, and by reducing the friction of test setup and discovery. Minctes is somewhat inspired by the built in testing framework in Go.
 
 ## Features
 * Automatic test discovery
-* File name convention and macro based test declaration - tests remain close to their code
+* File name convention and macro based test declaration - tests remain close to their source code
 * Design ensures that only public APIs are tested
 * Design means that your source and test code are compiled seperately - can speed up iteration
 * Set Up and Tear Down functionality
